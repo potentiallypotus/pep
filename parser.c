@@ -1,4 +1,6 @@
 #include "stdlib.h"
+#include "pep_error.h"
+#include "string.h"
 #include "stdbool.h"
 #include "stdio.h"
 #include "lexer.h"
@@ -18,8 +20,23 @@ ASTnode* createBinaryNode(tokenType op, ASTnode* left, ASTnode* right){
 }
 Value convertNumTok(struct token* tok){
 	Value val;
-	val.type = VAL_INT64;
-	val.as.as_int64 = (int64_t)(atoll(tok->value));
+	const char* s = tok->value;
+	if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
+		val.type = VAL_INT64;
+		val.as.as_int64 = (int64_t)strtoll(s, NULL, 16);
+	} else if (s[0] == '0' && (s[1] == 'b' || s[1] == 'B')) {
+		val.type = VAL_INT64;
+		val.as.as_int64 = (int64_t)strtoll(s + 2, NULL, 2);
+	} else if (s[tok->len - 1] == 'f' || s[tok->len - 1] == 'F') {
+		val.type = VAL_F32;
+		val.as.as_f32 = strtof(s, NULL);
+	} else if (memchr(s, '.', tok->len)) {
+		val.type = VAL_F64;
+		val.as.as_f64 = strtod(s, NULL);
+	} else {
+		val.type = VAL_INT64;
+		val.as.as_int64 = (int64_t)atoll(s);
+	}
 	return val;
 }
 Value createVal(struct token* tok){
@@ -28,9 +45,12 @@ Value createVal(struct token* tok){
 		case(TOKEN_NUMBER) :
 			val = convertNumTok(tok);
 			break;
-		default:
-			fprintf(stderr, "createVal(token): token type not implemented: Token = {type:%d, val:%s}\n", tok->type, tok->value);
-			exit(1);
+		default: {
+			static char errbuf[128];
+			snprintf(errbuf, sizeof(errbuf), "unexpected token '%.*s' (%s)",
+			         tok->len, tok->value, tokentype_tostring(tok->type));
+			pep_error((PepError){ .message = errbuf, .line = tok->line, .col = tok->col });
+		}
 	}
 	return val;
 }
@@ -69,8 +89,11 @@ ASTnode* parseFactor(){
 		advance();
 		return createLiteralNode(number);
 	}
-	fprintf(stderr, "parseFactor(): Null factor");
-	exit(1);
+	pep_error((PepError){
+		.message = "expected expression",
+		.line    = current ? current->line : 0,
+		.col     = current ? current->col  : 0,
+	});
 }
 ASTnode* parseTerms(){
 	ASTnode* left = parseFactor();
@@ -112,9 +135,11 @@ char* val_tostring(Value val){
 		case VAL_F32:    snprintf(buffer, sizeof(buffer), "%g",   (double)val.as.as_f32); break;
 		case VAL_F64:    snprintf(buffer, sizeof(buffer), "%g",   val.as.as_f64);         break;
 		case VAL_STRING: snprintf(buffer, sizeof(buffer), "%s",   val.as.as_string);      break;
-		default:
-			fprintf(stderr, "val_tostring(val): unhandled value type: %d\n", val.type);
-			exit(1);
+		default: {
+			static char errbuf[64];
+			snprintf(errbuf, sizeof(errbuf), "val_tostring: unhandled value type %d", val.type);
+			pep_error((PepError){ .message = errbuf });
+		}
 	}
 	return buffer;
 }

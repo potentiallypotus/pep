@@ -13,7 +13,7 @@ int is_identifier_part(char c) {
 	return isalnum(c) || c == '_';
 }
 
-struct token* getToken(char** line) {
+static struct token* getToken(char** line, char* line_start, int line_num) {
 	while (isspace(**line))
 		(*line)++;
 
@@ -24,6 +24,8 @@ struct token* getToken(char** line) {
 	newTok.len = 1;
 	newTok.next = NULL;
 	newTok.value = start;
+	newTok.line = line_num;
+	newTok.col = (int)(start - line_start) + 1;
 	int valid = 0;
 	char c = *start;
 	(*line)++;
@@ -78,9 +80,19 @@ struct token* getToken(char** line) {
 			valid = 1;
 		} else if (isdigit(c)) {
 			newTok.type = TOKEN_NUMBER;
-			while (isdigit(**line)) {
-				(*line)++;
-				newTok.len++;
+			if (c == '0' && (**line == 'x' || **line == 'X')) {
+				(*line)++; newTok.len++;
+				while (isxdigit(**line)) { (*line)++; newTok.len++; }
+			} else if (c == '0' && (**line == 'b' || **line == 'B')) {
+				(*line)++; newTok.len++;
+				while (**line == '0' || **line == '1') { (*line)++; newTok.len++; }
+			} else {
+				while (isdigit(**line)) { (*line)++; newTok.len++; }
+				if (**line == '.') {
+					(*line)++; newTok.len++;
+					while (isdigit(**line)) { (*line)++; newTok.len++; }
+				}
+				if (**line == 'f' || **line == 'F') { (*line)++; newTok.len++; }
 			}
 			valid = 1;
 		}
@@ -144,13 +156,13 @@ const char* tokentype_tostring(enum tokenType t) {
 	}
 }
 
-struct token* lex(char* line) {
+struct token* lex(char* line, int line_num) {
 	char* pos = line;
 	struct token* head = NULL;
 	struct token* tail = NULL;
 	struct token* newTok = NULL;
 
-	while ((newTok = getToken(&pos))) {
+	while ((newTok = getToken(&pos, line, line_num))) {
 		if (head == NULL) {
 			head = newTok;
 			tail = newTok;

@@ -1,5 +1,6 @@
 #include "lexer.h"
 #include "parser.h"
+#include "pep_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -33,20 +34,23 @@ void printAST(ASTnode *node, int depth) {
     break;
   }
 }
-void doLine(char *line, size_t size) {
+void doLine(char *line, size_t size, int line_num) {
   if (size != 0 && line[size - 1] == '\n')
     line[--size] = '\0';
-  struct token *tok = lex(line);
+  pep_source_line = line;
+  struct token *tok = lex(line, line_num);
   ASTnode *root = parse(tok);
-	Value val = eval(root);
-	printf("%s\n", val_tostring(val));
+  Value val = eval(root);
+  printf("%s\n", val_tostring(val));
 }
 
 int main(void) {
   char *line = NULL;
   size_t lineLen = 0;
   ssize_t bytesRead;
+  int line_num = 1;
 
+  pep_jmp_set = 1;
   while (1) {
     printf("pep >> ");
     bytesRead = getline(&line, &lineLen, stdin);
@@ -54,7 +58,8 @@ int main(void) {
       free(line);
       return 1;
     }
-    doLine(line, bytesRead);
+    if (setjmp(pep_jmp) == 0)
+      doLine(line, bytesRead, line_num++);
   }
   free(line);
 }

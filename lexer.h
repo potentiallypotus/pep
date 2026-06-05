@@ -45,10 +45,12 @@ struct token{
 	enum tokenType type;
 	char* value;
 	int len;
+	int line;
+	int col;
 	struct token* next;
 };
 
-struct token* lex(char*);
+struct token* lex(char* line, int line_num);
 const char* tokentype_tostring(enum tokenType t);
 #endif
 
