@@ -28,6 +28,8 @@ typedef enum tokenType{
 		TOKEN_LTE,
     TOKEN_EQUAL,         // =
     TOKEN_EQUAL_EQUAL,   // ==
+    TOKEN_BANG,          // !
+    TOKEN_BANG_EQUAL,    // !=
 
     // --- Literals ---
     TOKEN_IDENTIFIER, TOKEN_NUMBER, TOKEN_STRING,
@@ -47,5 +49,6 @@ struct token{
 };
 
 struct token* lex(char*);
+const char* tokentype_tostring(enum tokenType t);
 #endif
 

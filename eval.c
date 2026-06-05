@@ -231,6 +231,7 @@ CMP_BINOP(evalGTE, >=)
 CMP_BINOP(evalLT, <)
 CMP_BINOP(evalLTE, <=)
 CMP_BINOP(evalEqualEqual, ==)
+CMP_BINOP(evalNotEqual, !=)
 
 static Value evalBinary(tokenType op, Value left, Value right){
 	switch (op) {
@@ -246,6 +247,7 @@ static Value evalBinary(tokenType op, Value left, Value right){
 		case TOKEN_LT:           return evalLT(left, right);
 		case TOKEN_LTE:          return evalLTE(left, right);
 		case TOKEN_EQUAL_EQUAL:  return evalEqualEqual(left, right);
+		case TOKEN_BANG_EQUAL:   return evalNotEqual(left, right);
 		default:
 			fprintf(stderr, "evalBinary(op, left, right): hit unimplemented op -> %d\n", op);
 			exit(1);
