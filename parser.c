@@ -19,7 +19,7 @@ ASTnode* createBinaryNode(tokenType op, ASTnode* left, ASTnode* right){
 Value convertNumTok(struct token* tok){
 	Value val;
 	val.type = VAL_INT64;
-	val.as.as_int64 = (int64_t)(atoi(tok->value));
+	val.as.as_int64 = (int64_t)(atoll(tok->value));
 	return val;
 }
 Value createVal(struct token* tok){
@@ -67,14 +67,19 @@ ASTnode* parseFactor(){
 	if (check(TOKEN_NUMBER)){
 		struct token* number = current;
 		advance();
-
-
+		return createLiteralNode(number);
 	}
-	return val;
+	fprintf(stderr, "parseFactor(): Null factor");
+	exit(1);
 }
 ASTnode* parseTerms(){
 	ASTnode* left = parseFactor();
-
+	while (check(TOKEN_STAR) || check(TOKEN_SLASH)){
+		tokenType op = current->type;
+		advance();
+		ASTnode* right = parseFactor();
+		left = createBinaryNode(op, left, right);
+	}
 	return left;
 }
 ASTnode* parseExpr(){
@@ -91,8 +96,5 @@ ASTnode* parse(struct token* tok){
 	current = tok;
 	return parseExpr();
 }
-Value eval(ASTnode* root){
-	Value val;
-	return val;
-}
+
 

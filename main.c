@@ -1,34 +1,73 @@
+#include "lexer.h"
+#include "parser.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "lexer.h"
 
-void doLine(char* line, size_t size) {
-	if (size != 0 && line[size-1] == '\n')
-		line[--size] = '\0';
-	struct token* tok = lex(line);
-	struct token* cur = tok;
-	while (cur != NULL) {
-		struct token* next = cur->next;
-		printf("[%d] %.*s\n", cur->type, cur->len, cur->value);
-		free(cur);
-		cur = next;
+void printAST(ASTnode *node, int depth) {
+  if (node == NULL)
+    return;
+
+  // Print indentation based on current depth
+  for (int i = 0; i < depth; i++)
+    printf("  ");
+
+  switch (node->type) {
+  case AST_LITERAL:
+    printf("LITERAL: ");
+    // Here is where you use your ValueType to format correctly
+    if (node->data.Literal.val.type == VAL_INT64) {
+      printf("%lld\n", node->data.Literal.val.as.as_int64);
+    }
+    // Add other types as you implement them!
+    break;
+
+  case AST_BINARY:
+    printf("BINARY OP: %d\n", node->data.Binary.op);
+    printAST(node->data.Binary.left, depth + 1);
+    printAST(node->data.Binary.right, depth + 1);
+    break;
+
+  case AST_VAR_DECL:
+    printf("VAR DECL: %s\n", node->data.Var_decl.name);
+    printAST(node->data.Var_decl.init, depth + 1);
+    break;
+  }
+}
+char* val_tostring(Value val){
+	static char buffer[128];
+	switch (val.type) {
+		case VAL_INT64:
+		sprintf(buffer, "%lld", val.as.as_int64);
+		break;
+		default:
+		fprintf(stderr, "val_tostring(val): unhandled value type: %d\n", val.type);
+		exit(1);
 	}
+	return buffer;
+}
+
+void doLine(char *line, size_t size) {
+  if (size != 0 && line[size - 1] == '\n')
+    line[--size] = '\0';
+  struct token *tok = lex(line);
+  ASTnode *root = parse(tok);
+	Value val = eval(root);
+	printf("%s\n", val_tostring(val));
 }
 
 int main(void) {
-	char* line = NULL;
-	size_t lineLen = 0;
-	ssize_t bytesRead;
+  char *line = NULL;
+  size_t lineLen = 0;
+  ssize_t bytesRead;
 
-	while (1) {
-		printf("pep >> ");
-		bytesRead = getline(&line, &lineLen, stdin);
-		if (bytesRead < 0) {
-			free(line);
-			return 1;
-		}
-		doLine(line, bytesRead);
-
-	}
-	free(line);
+  while (1) {
+    printf("pep >> ");
+    bytesRead = getline(&line, &lineLen, stdin);
+    if (bytesRead < 0) {
+      free(line);
+      return 1;
+    }
+    doLine(line, bytesRead);
+  }
+  free(line);
 }
