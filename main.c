@@ -33,19 +33,6 @@ void printAST(ASTnode *node, int depth) {
     break;
   }
 }
-char* val_tostring(Value val){
-	static char buffer[128];
-	switch (val.type) {
-		case VAL_INT64:
-		sprintf(buffer, "%lld", val.as.as_int64);
-		break;
-		default:
-		fprintf(stderr, "val_tostring(val): unhandled value type: %d\n", val.type);
-		exit(1);
-	}
-	return buffer;
-}
-
 void doLine(char *line, size_t size) {
   if (size != 0 && line[size - 1] == '\n')
     line[--size] = '\0';

@@ -40,4 +40,5 @@ typedef struct ASTnode{
 
 ASTnode* parse(struct token* tok);
 Value eval(ASTnode*);
+char* val_tostring(Value val);
 #endif

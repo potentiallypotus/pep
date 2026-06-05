@@ -97,4 +97,26 @@ ASTnode* parse(struct token* tok){
 	return parseExpr();
 }
 
+char* val_tostring(Value val){
+	static char buffer[128];
+	switch (val.type) {
+		case VAL_INT8:   snprintf(buffer, sizeof(buffer), "%d",   (int)val.as.as_int8);   break;
+		case VAL_INT16:  snprintf(buffer, sizeof(buffer), "%d",   (int)val.as.as_int16);  break;
+		case VAL_INT32:  snprintf(buffer, sizeof(buffer), "%d",   val.as.as_int32);       break;
+		case VAL_INT64:  snprintf(buffer, sizeof(buffer), "%lld", val.as.as_int64);       break;
+		case VAL_UINT8:  snprintf(buffer, sizeof(buffer), "%u",   (unsigned)val.as.as_uint8);  break;
+		case VAL_UINT16: snprintf(buffer, sizeof(buffer), "%u",   (unsigned)val.as.as_uint16); break;
+		case VAL_UINT32: snprintf(buffer, sizeof(buffer), "%u",   val.as.as_uint32);      break;
+		case VAL_UINT64: snprintf(buffer, sizeof(buffer), "%llu", val.as.as_uint64);      break;
+		case VAL_F16:    snprintf(buffer, sizeof(buffer), "%g",   (double)val.as.as_f16); break;
+		case VAL_F32:    snprintf(buffer, sizeof(buffer), "%g",   (double)val.as.as_f32); break;
+		case VAL_F64:    snprintf(buffer, sizeof(buffer), "%g",   val.as.as_f64);         break;
+		case VAL_STRING: snprintf(buffer, sizeof(buffer), "%s",   val.as.as_string);      break;
+		default:
+			fprintf(stderr, "val_tostring(val): unhandled value type: %d\n", val.type);
+			exit(1);
+	}
+	return buffer;
+}
+
 
